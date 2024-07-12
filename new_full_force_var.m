@@ -1,4 +1,4 @@
-function xdot = new_full_force(t_inertial, x_inertial)
+function xdot = new_full_force_var(t_inertial, x_inertial)
     % Compute the state transition matrix (STM) and the variational equations
     % for an n-body problem where the spacecraft is influenced by the gravity
     % of multiple bodies in the solar system.
@@ -6,7 +6,6 @@ function xdot = new_full_force(t_inertial, x_inertial)
     % Global variables
     global PRIMARIES
     global BODIES
-    global FRAME
     global OBSERVER
     
     % state_bersistent variables
@@ -15,17 +14,15 @@ function xdot = new_full_force(t_inertial, x_inertial)
     % All bodies considered for gravitational forces
     all_bodies = [PRIMARIES, BODIES];
     n_bodies = length(all_bodies);
-    xdot = zeros(42, 1); % state_breallocate xdot
     a = 0; % [km/s^2]
 
     
     % Load required Kernels and ephemeris file once
     META = 'kernels_to_load.tm'; % Initialize required kernels
     cspice_furnsh(META); % Furnish kernels
-    t_utc = cspice_et2utc(t_inertial, 'C', 0);
+    %t_utc = cspice_et2utc(t_inertial, 'C', 0);
     
-    % state_breallocate accumulators for parallel loop
-    a_tot = zeros(3, 1);
+    % state preallocate accumulators for parallel loop
     jacobianLowerLeft = zeros(3,3);
     
     % Initialize GM if it's empty or has fewer elements than required
@@ -56,7 +53,6 @@ function xdot = new_full_force(t_inertial, x_inertial)
         z = x_inertial(3);
 
         r_sb = sqrt(((px - x)^2 + (py - y)^2 + (pz - z)^2));
-        r_sb2 = r_sb^2;
         r_sb3 = r_sb^3; % term to speedup
         r_sb5 = r_sb^5; % term to speedup
         
