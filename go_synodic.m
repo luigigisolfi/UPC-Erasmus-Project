@@ -32,6 +32,7 @@ for i = 1:length(rel_pos)
     %Apply the formula to conversion between two reference systems 
     %(see "Jorba, Simo, Masdemont, Gomez, Dynamics and Mission Design Near Libration Points", pp. 137-138)
     rtbp_pos_spacecraft(:,i) =  C\(inertial_pos(:, i)-b)/k; 
+
     rtbp_vel_spacecraft(:,i) = (C*k*n)\(inertial_vel(:,i) - b_dot - k*C_dot*rtbp_pos_spacecraft(:,i) - k_dot*C*rtbp_pos_spacecraft(:,i)); 
 
     a = rtbp_pos_spacecraft(:,i);

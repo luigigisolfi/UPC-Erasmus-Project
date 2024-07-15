@@ -46,7 +46,7 @@ cspice_kclear()
 META = 'kernels_to_load.tm'; %initialize required kernels
 cspice_furnsh(META); %furnish kernels
 [inertial_state_primaries, inertial_state_bodies, interpolators] = get_ephemeris(t_list, PRIMARIES, BODIES, FRAME, OBSERVER);
-N = 20; %number of nodes
+N = 30; %number of nodes
 
 mu = 0.0122;
 %orbit_file = 'Halo.txt';
@@ -138,7 +138,10 @@ end
 [inertial_pos_spacecraft, inertial_vel_spacecraft, ~] = go_inertial(rs_rp, vs_vp, as_ap, oas_oap, SEb_pos, SEb_vel, SEb_acc, rtbp_pos, rtbp_vel, rtbp_acc, n_rtbp);
 
 Q0 = [inertial_pos_spacecraft;inertial_vel_spacecraft];
-phi_Q_list = []
+phi_Q_list = [];
+t_inertial_list = [];
+
+%------------------------------------------------------------------------------------------------------------------------%
 for iteration = 1:15
 fprintf('iteration %f\n', iteration)
 t_list_ = [];
@@ -156,6 +159,7 @@ for i = 1:N-1
     phi_Q = phi_Q_tot(:,1:6);
 
     if iteration == 15
+        t_inertial_list = [t_inertial_list, t_];
         phi_Q_list = [phi_Q_list; phi_Q];
     end
     phi_Q_var = phi_Q_tot(:,7:42);
@@ -198,7 +202,18 @@ norm(delta_Q.')
 fprintf('Q0 old %f\n', Q0(1,1))
 Q0 = Q0 + delta_Q;
 fprintf('Q0 new %f\n', Q0(1,1))
-%scatter3(Q0(1,:),Q0(2,:), Q0(3,:), 'filled')
-
-
 end
+%------------------------------------------------------------------------------------------------------------------------%
+
+% ------------------------------------------------------------------------------------------------------------------------%
+% Prepare data matrix for saving inertial Lissajous data in a text file. 
+data = [t_inertial_list(:), phi_Q_list(:,1),phi_Q_list(:,2),phi_Q_list(:,3),phi_Q_list(:,4),phi_Q_list(:,5),phi_Q_list(:,6)]; % Combine time with x, y, z coordinates
+
+% Save data to Lissajous inertial text file
+filename_end = 'lissajous_inertial.txt';
+fid = fopen(filename_end, 'w');
+fprintf(fid, 'Time (s)\tX (km)\tY (km)\tZ (km)\tvx (km)\tvy (km)\tvz (km)\n');
+fprintf(fid, '%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\n', data.');
+fclose(fid);
+disp(['Orbit coordinates saved to ' filename_end]);
+%------------------------------------------------------------------------------------------------------------------------%
