@@ -198,7 +198,6 @@ norm(delta_Q.')
 fprintf('Q0 old %f\n', Q0(1,1))
 Q0 = Q0 + delta_Q;
 fprintf('Q0 new %f\n', Q0(1,1))
-%scatter3(Q0(1,:),Q0(2,:), Q0(3,:), 'filled')
 
 
 end
