@@ -50,8 +50,7 @@ N = 20; %number of nodes
 
 mu = 0.0122;
 %orbit_file = 'Halo.txt';
-orbit_file = 'orbit_coordinates.txt'
-
+orbit_file = 'orbit_coordinates.txt';
 %mu = 0.1 %Masde initial conditions
 %orbit_file = 'orbit_data.txt' %Masde orbits
 
@@ -60,6 +59,9 @@ orbit_file = 'orbit_coordinates.txt'
 %rtbp times
 ti = t(1); % 
 tf = t(end);  
+
+% figure
+% plot3(x(:,1), x(:,2), x(:,3))
 
 %convert rtbp times into inertial times (eclipse date = ti)
 ti_conversion = (ti/n_anomalistic + eclipse_date_et);
@@ -136,40 +138,34 @@ end
 [inertial_pos_spacecraft, inertial_vel_spacecraft, ~] = go_inertial(rs_rp, vs_vp, as_ap, oas_oap, SEb_pos, SEb_vel, SEb_acc, rtbp_pos, rtbp_vel, rtbp_acc, n_rtbp);
 
 Q0 = [inertial_pos_spacecraft;inertial_vel_spacecraft];
-for iteration = 1:5
+phi_Q_list = []
+for iteration = 1:15
 fprintf('iteration %f\n', iteration)
 t_list_ = [];
 F_list = [];
 df = cell(N-1, N);
 
-if iteration == 5
-figure;
-hold on;
-end
 fprintf('Q0 to recover %f\n', inertial_pos_spacecraft(1,1))
 fprintf('Q0 old %f\n', Q0(1,1))
 
+
 for i = 1:N-1
-    fprintf('Seed Number %d\n',i)
     xiv=eye(6,6);
-    fprintf('Integrating Variational Vector Field...\n')
-    [t_, phi_Q_tot] = ode45(@new_full_force_var_vectorized, [t_sampled_inertial(i), t_sampled_inertial(i+1)], [Q0(:,i);xiv(:)]);
+
+    [t_, phi_Q_tot] = ode78(@new_full_force_var_vectorized, [t_sampled_inertial(i), t_sampled_inertial(i+1)], [Q0(:,i);xiv(:)]);
     phi_Q = phi_Q_tot(:,1:6);
+
+    if iteration == 15
+        phi_Q_list = [phi_Q_list; phi_Q];
+    end
     phi_Q_var = phi_Q_tot(:,7:42);
     stm_x_noised = phi_Q_var(end,1:36);
     stm_6x6 = reshape(stm_x_noised, [6,6]);
-    fprintf('Done.\n')
-    scatter3(Q0(1,:),Q0(2,:), Q0(3,:), 'filled')
-    plot3(phi_Q(:,1), phi_Q(:,2), phi_Q(:,3), 'Color', 'Black', 'LineWidth',1)
+    %scatter3(Q0(1,:),Q0(2,:), Q0(3,:), 'filled')
+    %plot3(phi_Q(:,1), phi_Q(:,2), phi_Q(:,3), 'Color', 'Black', 'LineWidth',1)
     t_list_ = [t_list_; t_];
     F = phi_Q(end,:).' - Q0(:,i+1);
     F_list = [F_list; F];
-    
-    %If numerical computation of stm is wanted you can expand this --> 
-    % stm_x_noised_ = numericSTMvfield(t_sampled_inertial(i),t_sampled_inertial(i+1), Q0(:,i), eps, @new_full_force,hmin,hmax,tol);
-    %fprintf('Done.\n')
-    %stm_6x6 = reshape(stm_x_noised_, [6,6]);
-    %stm_6x6__ - stm_6x6
     df{i,i} = stm_6x6;
     df{i,i+1} = -eye(6);
     for j = 1:N
@@ -202,5 +198,7 @@ norm(delta_Q.')
 fprintf('Q0 old %f\n', Q0(1,1))
 Q0 = Q0 + delta_Q;
 fprintf('Q0 new %f\n', Q0(1,1))
-scatter3(Q0(1,:),Q0(2,:), Q0(3,:), 'filled')
-end 
+%scatter3(Q0(1,:),Q0(2,:), Q0(3,:), 'filled')
+
+
+end
