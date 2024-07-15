@@ -16,10 +16,18 @@ function xdot = new_full_force_var_vectorized(t_inertial, x_inertial, N)
     % All bodies considered for gravitational forces
     all_bodies = [PRIMARIES, BODIES];
     n_bodies = length(all_bodies);
-
+    
+    % clear cache and load all kernels at the first call
+    persistent flagKernelLoaded;
+    if isempty(flagKernelLoaded)
+        cspice_kclear;
+        % load all kernels from input
     % Load required Kernels and ephemeris file once
-    META = 'kernels_to_load.tm'; % Initialize required kernels
-    cspice_furnsh(META); % Furnish kernels
+        META = 'kernels_to_load.tm'; % Initialize required kernels
+        cspice_furnsh(META); % Furnish kernels
+        flagKernelLoaded = 1;
+    end
+    
 
     % Initialize GM if it's empty or has fewer elements than required
     if isempty(GM) || length(GM) < n_bodies
@@ -54,7 +62,7 @@ function xdot = new_full_force_var_vectorized(t_inertial, x_inertial, N)
             px = state_b(1);
             py = state_b(2);
             pz = state_b(3);
-
+    
             x = x_current(1);
             y = x_current(2);
             z = x_current(3);
@@ -89,5 +97,4 @@ function xdot = new_full_force_var_vectorized(t_inertial, x_inertial, N)
     % Flatten xdot back into a column vector
     xdot = xdot(:);
     %xdot = reshape(xdot,);
-    cspice_kclear();
 end

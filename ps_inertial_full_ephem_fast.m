@@ -169,7 +169,7 @@ for i = 1:N
     end
     
     % Perform integration for each row of Q0
-    [t_, phi_Q_tot] = ode113(@(t, y) new_full_force_var_vectorized(t, y, N), tspan, Q0(:,i));
+    [t_, phi_Q_tot] = ode45(@(t, y) new_full_force_var_vectorized(t, y, N), tspan, Q0(:,i));
     phi_Q = phi_Q_tot(:,1:6);
     phi_Q_var = phi_Q_tot(:,7:42);
     F = phi_Q(end,1:6).' - Q0(i,1:6);
