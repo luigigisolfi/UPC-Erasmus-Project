@@ -33,8 +33,8 @@ fprintf('Retrieved.\n\n')
 fprintf('Retrieving INERTIAL state vectors of the BODIES in the ECLIPJ2000 frame (from SPICE)...\n')
 inertial_state_bodies = struct();
 for j = 1:length(BODIES)
-    BODY = BODIES{j}
-    [inertial_state_body, ~] = cspice_spkezr(BODY, times, FRAME, 'NONE', OBSERVER) %State BODY wrt SS Barycenter
+    BODY = BODIES{j};
+    [inertial_state_body, ~] = cspice_spkezr(BODY, times, FRAME, 'NONE', OBSERVER); %State BODY wrt SS Barycenter
     % Compute the Relative Accelerations (needed for velocity conversion)
     acc_b = zeros(3,length(inertial_state_body));
     acc_b(1,1:end-1) = diff(inertial_state_body(4,:))./diff(times);

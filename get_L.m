@@ -17,7 +17,7 @@ time_step_coarse = 86400; % in seconds
 coarse_times = et_start:time_step_coarse:et_end;
 num_coarse_times = length(coarse_times);
 for i = 1:num_coarse_times
-    [state, ~] = cspice_spkpos('MOON', coarse_times(i), 'ECLIPJ2000', 'NONE', 'EARTH');
+    [state, ~] = cspice_spkpos(body_2, coarse_times(i), FRAME, 'NONE', body_1);
     coarse_distances(i) = norm(state);
 end
 

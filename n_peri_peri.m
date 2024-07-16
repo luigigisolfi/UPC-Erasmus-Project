@@ -3,7 +3,7 @@ META = 'kernels_to_load.tm'; %initialize required kernels
 cspice_furnsh(META); %furnish kernels
 
 % Define the overall time range for the search
-start_time = '1950-01-01';
+start_time = '1960-01-01';
 end_time = '2049-12-31';
 
 % Convert to ET (Ephemeris Time)
@@ -24,7 +24,7 @@ coarse_distances = zeros(1, num_coarse_times);
 %Computing anomalistic month duration with SPICE ephemeris
 
 for i = 1:num_coarse_times
-    [state, ~] = cspice_spkpos('MOON', coarse_times(i), 'J2000', 'NONE', 'EARTH');
+    [state, ~] = cspice_spkpos('EARTH', coarse_times(i), FRAME, 'NONE', 'SUN');
     coarse_distances(i) = norm(state);
 end
 
@@ -57,7 +57,7 @@ for i = 1:length(min_indices)
     
     % Compute the Moon's position relative to the Earth at each fine time step
     for j = 1:num_fine_times
-        [state, ~] = cspice_spkpos('MOON', fine_times(j), 'J2000', 'NONE', 'EARTH');
+        [state, ~] = cspice_spkpos('EARTH', fine_times(j), 'J2000', 'NONE', 'SUN');
         fine_distances(j) = norm(state);
     end
     
@@ -71,10 +71,9 @@ end
 % Convert the refined perigee times back to human-readable format
 n_list = zeros(length(refined_perigee_times));
 refined_perigee_dates = cell(size(refined_perigee_times));
-periods_list = diff(refined_perigee_times/86400);
+periods_list = diff(refined_perigee_times/86400)
 n_list = (2*pi./mean(periods_list));
-n = mean(n_list)/86400;
-
+n = n_list/86400
 % Unload SPICE kernels
 
 cspice_kclear()

@@ -1,7 +1,7 @@
 \begindata
 
 KERNELS_TO_LOAD = (
-      'kernels/spk/de405.bsp'
+      'kernels/spk/de438s.bsp'
       'kernels/lsk/latest_leapseconds.tls'
       'kernels/pck/Gravity.tpc'
       'kernels/pck/pck00008.tpc'

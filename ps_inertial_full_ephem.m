@@ -20,16 +20,16 @@ cspice_furnsh(META); %furnish kernels
 % ----------------------------------- %
 
 %  --------------- SET THE MODEL -------------
-FRAME = 'ECLIPJ2000';
-OBSERVER = 'EARTH-MOON BARYCENTER';
-BODIES = [];
-PRIMARIES = [{'EARTH'}, {'MOON'}];
+FRAME = 'J2000';
+OBSERVER = 'SUN';
+BODIES = [{'JUPITER BARYCENTER'}, {'MARS BARYCENTER'},{'MOON'}];
+PRIMARIES = [{'SUN'}, {'EARTH'}];
 L = get_L(FRAME, PRIMARIES); % Computes the mean distance of two given primaries over a timespan of 50 years 
-%L = 384601.25606767; %value form Gomez et al
 mu = get_mu(PRIMARIES); %Compute grav. parameter for the system
 MODEL = '@etbp'; 
 %-------- Compute mean anomaly (global variable, needed for time converison) ---------------%
-n_anomalistic = 2.639394888546285e-06; %computed with the function n_peri_peri, corresponding to the anomalistic month
+%n_anomalistic = 2.639394888546285e-06 %computed with the function n_peri_peri, corresponding to the anomalistic month FOR MOON EARTH
+n_anomalistic = 1.991059558724508e-07 %FOR EARTH SUN;
 n_rtbp = get_n(PRIMARIES,L); %computed with Kepler's 3rd Law
 %------------------------------------------------------------------------------%
 
@@ -39,29 +39,32 @@ cspice_furnsh(META); %furnish kernels
 eclipse_date_UTC= '21 JAN 2000 04:05:02';
 eclipse_date_et = cspice_str2et(eclipse_date_UTC);
 t_list = linspace(eclipse_date_et,eclipse_date_et + 100*pi/n_rtbp, 27*100); %propagation times for get_ephemeris function.
-cspice_kclear()
 %-------------------------------------------------------------------------------------------------------------%
 
 %--------- Retrieve INERTIAL state vectors of the two PRIMARIES in the ECLIPJ2000 frame (from SPICE) ---------%
 META = 'kernels_to_load.tm'; %initialize required kernels
 cspice_furnsh(META); %furnish kernels
 [inertial_state_primaries, inertial_state_bodies, interpolators] = get_ephemeris(t_list, PRIMARIES, BODIES, FRAME, OBSERVER);
-N = 30; %number of nodes
+N = 50; %number of nodes
 
-mu = 0.0122;
+%mu = 0.0122; %EM
+mu = 3.040423398444176E-06; %SE
 %orbit_file = 'Halo.txt';
-orbit_file = 'orbit_coordinates.txt';
+%orbit_file = 'orbit_coordinates.txt';
 %mu = 0.1 %Masde initial conditions
-%orbit_file = 'orbit_data.txt' %Masde orbits
+orbit_file = 'lissa_cut.txt' %Masde orbits
 
 % Retrieve (read) rtbp orbit
 [t, x] = read_orbit(orbit_file);
 %rtbp times
 ti = t(1); % 
 tf = t(end);  
-
+% 
 % figure
+% hold on
 % plot3(x(:,1), x(:,2), x(:,3))
+% scatter3(mu-1,0,0)
+% return
 
 %convert rtbp times into inertial times (eclipse date = ti)
 ti_conversion = (ti/n_anomalistic + eclipse_date_et);
@@ -90,8 +93,6 @@ rp = zeros(3, N);
 vp = zeros(3, N);
 rs = zeros(3, N);
 vs = zeros(3, N);
-R = zeros(N,3);
-V = zeros(N,3);
 
 for dim = 1:12
     t_sampled;
@@ -112,8 +113,8 @@ for dim = 1:12
     end
 end
 %retrieving primaries relative acceleration at each rtbp time
-rs_rp = rp-rs;
-vs_vp = vp-vs;
+rs_rp = rp - rs;
+vs_vp = vp -vs;
 as_ap = ap-as;
 oas_oap = oap-oas;
 
@@ -136,13 +137,20 @@ for i = 1:N
 end
 
 [inertial_pos_spacecraft, inertial_vel_spacecraft, ~] = go_inertial(rs_rp, vs_vp, as_ap, oas_oap, SEb_pos, SEb_vel, SEb_acc, rtbp_pos, rtbp_vel, rtbp_acc, n_rtbp);
-
+[rtbp_pos_spacecraft_] = go_synodic_pos_only(rs_rp, vs_vp, SEb_pos,inertial_pos_spacecraft.');
+% 
+% figure
+% hold on
+% axis equal
+% plot3(inertial_pos_spacecraft(1,:),inertial_pos_spacecraft(2,:),inertial_pos_spacecraft(3,:) )
+% scatter3(rs(1,:), rs(2,:), rs(3,:))
+% return
+%plot3(rp(1,:), rp(2,:), rp(3,:))
 Q0 = [inertial_pos_spacecraft;inertial_vel_spacecraft];
 phi_Q_list = [];
 t_inertial_list = [];
-
-%------------------------------------------------------------------------------------------------------------------------%
-for iteration = 1:15
+%-----------------------------------------------------------------------------------------------------------------------%
+for iteration = 1:9
 fprintf('iteration %f\n', iteration)
 t_list_ = [];
 F_list = [];
@@ -150,16 +158,14 @@ df = cell(N-1, N);
 
 fprintf('Q0 to recover %f\n', inertial_pos_spacecraft(1,1))
 fprintf('Q0 old %f\n', Q0(1,1))
-
+    xiv=eye(6,6);
 
 for i = 1:N-1
     xiv=eye(6,6);
-
-    [t_, phi_Q_tot] = ode78(@new_full_force_var_vectorized, [t_sampled_inertial(i), t_sampled_inertial(i+1)], [Q0(:,i);xiv(:)]);
+    [t_, phi_Q_tot] = ode113(@new_full_force_var_vectorized, [t_sampled_inertial(i), t_sampled_inertial(i+1)], [Q0(:,i);xiv(:)]);
     phi_Q = phi_Q_tot(:,1:6);
-
-    if iteration == 15
-        t_inertial_list = [t_inertial_list, t_];
+    if iteration == 9
+        t_inertial_list = [t_inertial_list; t_];
         phi_Q_list = [phi_Q_list; phi_Q];
     end
     phi_Q_var = phi_Q_tot(:,7:42);
@@ -196,7 +202,7 @@ for i = 1:N-1
     end
 end
 
-delta_Q = - DF.' * inv(DF*DF.') * F_list;
+delta_Q = - DF.' * pinv(DF*DF.')*F_list;
 delta_Q = reshape(delta_Q, [6,N]);
 norm(delta_Q.')
 fprintf('Q0 old %f\n', Q0(1,1))
@@ -217,3 +223,89 @@ fprintf(fid, '%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\n', data.');
 fclose(fid);
 disp(['Orbit coordinates saved to ' filename_end]);
 %------------------------------------------------------------------------------------------------------------------------%
+
+[inertial_state_primaries_new, inertial_state_bodies_new, interpolators_new] = get_ephemeris(t_list, PRIMARIES, BODIES, FRAME, OBSERVER);
+t_list(1)
+t_list(end)
+t_list_(1)
+t_list_(end)
+
+% Initialize arrays to store interpolated position and velocity
+len_t_list_ = length(t_list_(:));
+rp_new = zeros(3, len_t_list_);
+vp_new = zeros(3, len_t_list_);
+rs_new = zeros(3, len_t_list_);
+vs_new = zeros(3, len_t_list_);
+
+for dim = 1:6
+    interpolated_p_new = ppval(interpolators_new.(primary_str).spline{dim}, t_list_(:));
+    interpolated_s_new = ppval(interpolators_new.(secondary_str).spline{dim}, t_list_(:));
+    if dim <= 3
+        rp_new(dim, :) = interpolated_p_new;
+        rs_new(dim,:) = interpolated_s_new;
+    elseif dim>=4 && dim<=6 
+        vp_new(dim-3, :) = interpolated_p_new;
+        vs_new(dim-3, :) = interpolated_s_new;          
+    end
+end
+
+
+%retrieving primaries relative acceleration at each rtbp time
+rs_rp_new = rp_new-rs_new;
+vs_vp_new = vp_new-vs_new;
+
+%barycenter
+SEb_pos_new = rp_new - mu*rs_rp_new;
+
+
+%figure
+%hold on
+%axis equal
+%plot3(phi_Q_list(:,1), phi_Q_list(:,2), phi_Q_list(:,3))
+%plot3(rp_new(1,:), rp_new(2,:), rp_new(3,:))
+%scatter3(rs_new(1,:), rs_new(2,:), rs_new(3,:))
+
+
+rtbp_pos_spacecraft = go_synodic_pos_only(rs_rp_new,vs_vp_new, SEb_pos_new, phi_Q_list);
+%figure
+% hold on
+%plot3(rtbp_pos_spacecraft(1,:), rtbp_pos_spacecraft(2,:), rtbp_pos_spacecraft(3,:))%
+%scatter3(mu-1,0,0)
+
+% Create the 3D plot
+figure;
+hold on
+h = plot3(rtbp_pos_spacecraft(1,:), rtbp_pos_spacecraft(2,:), rtbp_pos_spacecraft(3,:), 'LineWidth', 1.2, 'DisplayName','F. Ephem Jup + Mar + Moon');
+h2 = plot3(x(:,1), x(:,2), x(:,3), 'LineWidth', 1, 'LineStyle','--', 'DisplayName', 'RTBP');
+scatter3(mu-1, 0, 0, 'filled', 'MarkerFaceColor', 'r');  % Plot the fixed point
+grid on;
+xlabel('X');
+ylabel('Y');
+zlabel('Z');
+title('3D Orbit');
+legend('show')
+
+% Set up the view angles
+az = linspace(0, 90, 90);  % Azimuth angles
+el = linspace(0, 50, 90);   % Constant elevation angle
+
+% Capture frames while rotating the view
+filename = '3d_orbit_spacecraft.gif';
+for i = 1:length(az)
+    view(az(i), el(i));
+    drawnow;
+    
+    % Capture the current frame
+    frame = getframe(gcf);
+    im = frame2im(frame);
+    [imind, cm] = rgb2ind(im, 256);
+    
+    % Write to the GIF file
+    if i == 1
+        imwrite(imind, cm, filename, 'gif', 'Loopcount', inf, 'DelayTime', 0.01);
+    else
+        imwrite(imind, cm, filename, 'gif', 'WriteMode', 'append', 'DelayTime', 0.01);
+    end
+end
+
+disp(['GIF saved as ', filename]);
