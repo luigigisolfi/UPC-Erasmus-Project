@@ -1,4 +1,4 @@
-function [rtbp_pos_spacecraft] = go_synodic_pos_only(rel_pos, rel_vel, SEb_pos, inertial_pos)
+function [rtbp_pos_spacecraft] = go_synodic_pos_only(rel_pos, rel_vel, SEb_pos, inertial_state, n)
 
 fprintf('-----------------------------------------------------------\n')
 fprintf('Function: go_inertial\nPerforming conversion from synodic (adimensional) system to inertial (physical) system...\n')
@@ -7,8 +7,6 @@ rtbp_pos_spacecraft = zeros(3,length(rel_pos));
 check_inertial_pos = zeros(3, length(rel_pos));
 check_inertial_vel = zeros(3, length(rel_pos));
 
-size(inertial_pos)
-size(rel_pos)
 for i = 1:length(rel_pos)
     rp_rs = rel_pos(:, i); 
     k = norm(rp_rs);
@@ -22,7 +20,7 @@ for i = 1:length(rel_pos)
     %Apply the formula to conversion between two reference systems 
     %(see "Jorba, Simo, Masdemont, Gomez, Dynamics and Mission Design Near Libration Points", pp. 137-138)
 
-    rtbp_pos_spacecraft(:,i) =  C\(inertial_pos(i,1:3).'-b)/k; 
+    rtbp_pos_spacecraft(:,i) =  C\(inertial_state(i,1:3).'-b)/k; 
 
     %--------------------------------------------------------------------------------------------%   
     % These two arrays are needed for the check of positions and velocities
@@ -39,7 +37,7 @@ end
 
 fprintf('-----------------------------------------------------------\n')
 fprintf('Function: go_inertial\nChecking whether the conversion has been successfull...\n')
-array_to_check = check_inertial_pos - inertial_pos(:,1:3).';
+array_to_check = check_inertial_pos - inertial_state(:,1:3).';
 check = 0;
 for i = 1:3
    for j = 1:length(array_to_check)

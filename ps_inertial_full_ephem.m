@@ -21,8 +21,8 @@ cspice_furnsh(META); %furnish kernels
 
 %  --------------- SET THE MODEL -------------
 FRAME = 'J2000';
-OBSERVER = 'SUN';
-BODIES = [{'JUPITER BARYCENTER'}, {'MARS BARYCENTER'},{'MOON'}];
+OBSERVER = 'EARTH';
+BODIES = [{'JUPITER BARYCENTER'}, {'MARS BARYCENTER'},{'MOON'}, {'SATURN BARYCENTER'}, {'MERCURY'}, {'VENUS'}, {'URANUS BARYCENTER'}, {'PLUTO BARYCENTER'}, {'NEPTUNE BARYCENTER'}];
 PRIMARIES = [{'SUN'}, {'EARTH'}];
 L = get_L(FRAME, PRIMARIES); % Computes the mean distance of two given primaries over a timespan of 50 years 
 mu = get_mu(PRIMARIES); %Compute grav. parameter for the system
@@ -150,7 +150,7 @@ Q0 = [inertial_pos_spacecraft;inertial_vel_spacecraft];
 phi_Q_list = [];
 t_inertial_list = [];
 %-----------------------------------------------------------------------------------------------------------------------%
-for iteration = 1:9
+for iteration = 1:5
 fprintf('iteration %f\n', iteration)
 t_list_ = [];
 F_list = [];
@@ -164,7 +164,7 @@ for i = 1:N-1
     xiv=eye(6,6);
     [t_, phi_Q_tot] = ode113(@new_full_force_var_vectorized, [t_sampled_inertial(i), t_sampled_inertial(i+1)], [Q0(:,i);xiv(:)]);
     phi_Q = phi_Q_tot(:,1:6);
-    if iteration == 9
+    if iteration == 5
         t_inertial_list = [t_inertial_list; t_];
         phi_Q_list = [phi_Q_list; phi_Q];
     end
@@ -219,7 +219,7 @@ data = [t_inertial_list(:), phi_Q_list(:,1),phi_Q_list(:,2),phi_Q_list(:,3),phi_
 filename_end = 'lissajous_inertial.txt';
 fid = fopen(filename_end, 'w');
 fprintf(fid, 'Time (s)\tX (km)\tY (km)\tZ (km)\tvx (km)\tvy (km)\tvz (km)\n');
-fprintf(fid, '%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\n', data.');
+fprintf(fid, '%.12f\t%.12f\t%.12f\t%.12f\t%.12f\t%.12f\t%.12f\n', data.');
 fclose(fid);
 disp(['Orbit coordinates saved to ' filename_end]);
 %------------------------------------------------------------------------------------------------------------------------%
@@ -236,8 +236,10 @@ rp_new = zeros(3, len_t_list_);
 vp_new = zeros(3, len_t_list_);
 rs_new = zeros(3, len_t_list_);
 vs_new = zeros(3, len_t_list_);
+ap_new = zeros(3, len_t_list_);
+as_new = zeros(3, len_t_list_);
 
-for dim = 1:6
+for dim = 1:9
     interpolated_p_new = ppval(interpolators_new.(primary_str).spline{dim}, t_list_(:));
     interpolated_s_new = ppval(interpolators_new.(secondary_str).spline{dim}, t_list_(:));
     if dim <= 3
@@ -245,17 +247,23 @@ for dim = 1:6
         rs_new(dim,:) = interpolated_s_new;
     elseif dim>=4 && dim<=6 
         vp_new(dim-3, :) = interpolated_p_new;
-        vs_new(dim-3, :) = interpolated_s_new;          
+        vs_new(dim-3, :) = interpolated_s_new;      
+    elseif dim>=7 && dim<=9
+        ap_new(dim-6, :) = interpolated_p_new;
+        as_new(dim-6, :) = interpolated_s_new; 
     end
+    
 end
 
 
 %retrieving primaries relative acceleration at each rtbp time
 rs_rp_new = rp_new-rs_new;
 vs_vp_new = vp_new-vs_new;
+as_ap_new = ap_new - as_new;
 
 %barycenter
 SEb_pos_new = rp_new - mu*rs_rp_new;
+SEb_vel_new = vp_new - mu*vs_vp_new;
 
 
 %figure
@@ -266,7 +274,19 @@ SEb_pos_new = rp_new - mu*rs_rp_new;
 %scatter3(rs_new(1,:), rs_new(2,:), rs_new(3,:))
 
 
-rtbp_pos_spacecraft = go_synodic_pos_only(rs_rp_new,vs_vp_new, SEb_pos_new, phi_Q_list);
+[rtbp_pos_spacecraft, rtbp_vel_spacecraft] = go_synodic_pos_vel_only(rs_rp_new,vs_vp_new, as_ap_new, SEb_pos_new, SEb_vel_new, phi_Q_list, n_rtbp);
+% Save data to Lissajous inertial text file
+filename_end = 'test_lissajous_for_comparison.txt';
+size(rtbp_pos_spacecraft)
+size(rtbp_vel_spacecraft)
+size(t_inertial_list(:))
+data_new = [t_inertial_list(:)*n_rtbp, rtbp_pos_spacecraft(1,:).',rtbp_pos_spacecraft(2,:).',rtbp_pos_spacecraft(3,:).',rtbp_vel_spacecraft(1,:).',rtbp_vel_spacecraft(2,:).',rtbp_vel_spacecraft(3,:).']; % Combine time with x, y, z coordinates
+fid = fopen(filename_end, 'w');
+fprintf(fid, 'Time (s)\tX (km)\tY (km)\tZ (km)\tvx (km)\tvy (km)\tvz (km)\n');
+fprintf(fid, '%.12f\t%.12f\t%.12f\t%.12f\t%.12f\t%.12f\t%.12f\n', data_new.');
+fclose(fid);
+disp(['Orbit coordinates saved to ' filename_end]);
+return
 %figure
 % hold on
 %plot3(rtbp_pos_spacecraft(1,:), rtbp_pos_spacecraft(2,:), rtbp_pos_spacecraft(3,:))%
