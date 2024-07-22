@@ -235,11 +235,32 @@ for i = 1:length(x_orb(:,1))
     end
 end
 
-contourf(X,Y,Z_grid)
-title('Contour plot of interpolated data');
-xlabel('x');
-ylabel('y');
-colorbar;
+% contourf(X,Y,Z_grid)
+% title('Contour plot of interpolated data');
+% xlabel('x');
+% ylabel('y');
+% colorbar;
+
+% Normalize L for color scaling
+Z_min = min(Z);
+Z_max = max(Z);
+Z_norm = (Z - Z_min)/ (Z_max - Z_min); % Normalized to [0, 1]
+
+% Create colormap from blue to red
+cmap = jet; % Jet colormap from blue to red
+% Get the number of colors in the colormap
+nColors = size(cmap, 1);
+% Map the normalized Z values to colormap indices
+colorIdx = round(Z_norm * (nColors - 1)) + 1;
+colors = cmap(colorIdx, :);
+opacity = 0.6;
+scatter3(x_orb(:,1), x_orb(:,2), x_orb(:,3), 36, colors, 'filled', 'MarkerFaceAlpha', opacity, 'MarkerEdgeAlpha', opacity);
+% Add colorbar for reference
+colormap(cmap);
+c = colorbar;
+c.Ticks = linspace(0, 1, 11); % 11 ticks from 0 to 1
+c.TickLabels = num2str(linspace(Z_min, Z_max, 11)', '%.2f'); % Corresponding values of L
+c.Label.String = 'Value of Z';
 
 % Find the indices where index_matrix is 1
 [row] = find(index_matrix == 1);
@@ -247,30 +268,34 @@ colorbar;
 % Extract the corresponding X, Y, and Z values
 crossX1 = x_orb(row,1);
 crossX2 = x_orb(row,2);
+crossX3 = x_orb(row,3);
 % Overlay the crosses on the contour plot
-scatter(crossX1, crossX2, 'xk','DisplayName', 'RTBP');
+scatter3(crossX1, crossX2,crossX3,80,  'xk','DisplayName', 'RTBP');
 
 [row_] = find(index_matrix == 2);
 
 % Extract the corresponding X, Y, and Z values
 crossX1_ = x_orb(row_,1);
 crossX2_ = x_orb(row_,2);
+crossX3_ = x_orb(row_,3);
 % Overlay the crosses on the contour plot
-scatter(crossX1_, crossX2_,'o', 'DisplayName', 'ETBP');
+scatter3(crossX1_, crossX2_,crossX3_,80,'o','DisplayName', 'ETBP');
 
 [row__] = find(index_matrix == 3);
 % Extract the corresponding X, Y, and Z values
 crossX1__ = x_orb(row__,1);
 crossX2__ = x_orb(row__,2);
+crossX3__ = x_orb(row__,3);
 % Overlay the crosses on the contour plot
-scatter(crossX1__, crossX2__, 's', 'DisplayName', 'hill3b');
+scatter3(crossX1__, crossX2__, crossX3__,80, 's', 'DisplayName', 'hill3b');
 
 [row___] = find(index_matrix == 4);
 % Extract the corresponding X, Y, and Z values
 crossX1___ = x_orb(row___,1);
 crossX2___ = x_orb(row___,2);
+crossX3___ = x_orb(row___,3);
 % Overlay the crosses on the contour plot
-%scatter(crossX1__, crossX2__, 's', 'DisplayName', 'SAME');
+%scatter3(crossX1___, crossX2___,crossX3___,'s',45, 'DisplayName', 'SAME');
 legend('show')
 return
 
