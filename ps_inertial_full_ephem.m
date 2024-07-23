@@ -51,7 +51,8 @@ N = 50; %number of nodes
 mu = 3.040423398444176E-06; %SE
 %orbit_file = 'lissa_cut.txt' %Masde orbits
 %orbit_file = 'circular_orbit_Earth_Sun.txt'
-orbit_file = 'halo_demo_master.txt';
+%orbit_file = 'halo_demo_master.txt';
+orbit_file = 'circular_orbit_Earth_Sun_around_Sun.txt';
 
 % Retrieve (read) rtbp orbit
 [t, x] = read_orbit(orbit_file);
@@ -149,7 +150,7 @@ Q0 = [inertial_pos_spacecraft;inertial_vel_spacecraft];
 phi_Q_list = [];
 t_inertial_list = [];
 %-----------------------------------------------------------------------------------------------------------------------%
-for iteration = 1:5
+for iteration = 1:10
 fprintf('iteration %f\n', iteration)
 t_list_ = [];
 F_list = [];

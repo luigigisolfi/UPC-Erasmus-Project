@@ -8,8 +8,12 @@ global mu;
 mu = 3.0035e-06 %for Earth Sun
 %--------------------------------------------------------------------------
  ti=0;
- r_geo = 2.818791946308725e-04 %corresponding to 42000 km orbit, GEO
- xi_circular = [mu-1-r_geo 0 0 0 sqrt(mu/r_geo) 0]
+ %r_geo = 2.818791946308725e-04 %corresponding to 42000 km orbit, GEO
+ %xi_geo = [mu-1-r_geo 0 0 0 sqrt(mu/r_geo) 0]
+
+ r_circular_sun = 2.818791946308725e-02
+ xi_circular_sun = [mu-r_circular_sun 0 0 0 sqrt((1-mu)/r_circular_sun) 0]
+ 
  %xi_L1=[-0.866                  0  -0.000291323690820                   0  +0.083326303745315                   0];
  %xi_L3 = [1.02 0.000000000E+00 .0000000000E+00 ...
  %    0.0000000000E+00  -0.111258721E-00 .0000000000E+00];
@@ -27,12 +31,12 @@ mu = 3.0035e-06 %for Earth Sun
  %xi_rtbp = x_sol_rtbp(1);
  %xi_bfbp = x_sol_bfbp(1);
 
- [tfa_bfbp_circ, xf_bfbp_circ] = ode78(@rtbp, [0,0.1], xi_circular)
+ [tfa_bfbp_circ, xf_bfbp_circ] = ode78(@rtbp, [0,1], xi_circular_sun)
  axis equal
  hold on
  scatter3(xf_bfbp_circ(1,1), xf_bfbp_circ(1,2), xf_bfbp_circ(1,3))
  plot3(xf_bfbp_circ(:,1), xf_bfbp_circ(:,2),xf_bfbp_circ(:,3))
- scatter3(mu-1, 0,0)
+ scatter3(mu, 0,0)
 
  filename_end = 'circular_orbit_Earth_Sun'
 data_new = [tfa_bfbp_circ, xf_bfbp_circ(:,1), xf_bfbp_circ(:,2),xf_bfbp_circ(:,3),xf_bfbp_circ(:,4), xf_bfbp_circ(:,5),xf_bfbp_circ(:,6)]; % Combine time with x, y, z coordinates

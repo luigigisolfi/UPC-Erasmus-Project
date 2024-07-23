@@ -85,8 +85,9 @@ GM_2 = get_GM_body(body_2);
 % %x1 = linspace((mu-1)-sqrt((mu)/3), (mu)+sqrt((mu)/3), 20); % Range for x(1)
 % x2 = linspace(-0.07,0.07, 4); % Range for x(2)
 %filename = 'test_lissajous_for_comparison.txt';
-%filename = 'test_circular_orbit_Earth_Sun_for_comparison.txt'
-filename = 'halo_orbit_Earth_Sun.txt';
+%filename = 'test_circular_orbit_Earth_Sun_for_comparison.txt';
+%filename = 'halo_orbit_Earth_Sun.txt';
+filename = 'test_circular_orbit_Earth_Sun_around_Sun.txt';
 [t_orb,x_orb] = read_orbit(filename);
 %[X, Y] = meshgrid(x1, x2);
 %---------------------------------------------------------------------%
