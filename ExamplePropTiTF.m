@@ -4,27 +4,44 @@
 %-------------------------------------------------------------------
 clear all; close all; clc;
 global mu;
-mu=0.0122; %for Earth-Moon
+%mu=0.0122; %for Earth-Moon
+mu = 3.0035e-06 %for Earth Sun
 %--------------------------------------------------------------------------
  ti=0;
- xi_L1=[-0.866                  0  -0.000291323690820                   0  +0.083326303745315                   0];
- xi_L3 = [1.02 0.000000000E+00 .0000000000E+00 ...
-     0.0000000000E+00  -0.111258721E-00 .0000000000E+00];
- xi_L4 = [0.54+mu-1 sqrt(3)/2 0 0 0.05 0]
+ r_geo = 2.818791946308725e-04 %corresponding to 42000 km orbit, GEO
+ xi_circular = [mu-1-r_geo 0 0 0 sqrt(mu/r_geo) 0]
+ %xi_L1=[-0.866                  0  -0.000291323690820                   0  +0.083326303745315                   0];
+ %xi_L3 = [1.02 0.000000000E+00 .0000000000E+00 ...
+ %    0.0000000000E+00  -0.111258721E-00 .0000000000E+00];
+ %xi_L4 = [0.54+mu-1 sqrt(3)/2 0 0 0.05 0]
  
  hmin=1.e-6; hmax=1.e0; tol=1.e-10; h=0.001;
  ntall=1; iorb=-1;
  %[tf_rtbp, xf_rtbp] = propTallSec(ti,xi,h,hmin,hmax,tol,@rtbp,@gdgYSec,ntall,iorb);
  %[tf_bfbp, xf_bfbp] = propTallSec(ti,xi,h,hmin,hmax,tol,@bfbp,@gdgYSec,ntall,iorb);
 %-------------------------------------------------------------------------
- cji=cjrtbp(xi_L3,mu);
- tf = 6
+ %cji=cjrtbp(xi_L3,mu);
+ tf = 1
  %tf_rtbp = 2*tf_rtbp(end);
  %tf_bfbp = 2*tf_bfbp(end);
  %xi_rtbp = x_sol_rtbp(1);
  %xi_bfbp = x_sol_bfbp(1);
 
- [tfa_bfbp_L1, xf_bfbp_L1] = propTITF(ti,xi_L1,tf,@hill3b,hmin,hmax,tol,1);
+ [tfa_bfbp_circ, xf_bfbp_circ] = ode78(@rtbp, [0,0.1], xi_circular)
+ axis equal
+ hold on
+ scatter3(xf_bfbp_circ(1,1), xf_bfbp_circ(1,2), xf_bfbp_circ(1,3))
+ plot3(xf_bfbp_circ(:,1), xf_bfbp_circ(:,2),xf_bfbp_circ(:,3))
+ scatter3(mu-1, 0,0)
+
+ filename_end = 'circular_orbit_Earth_Sun'
+data_new = [tfa_bfbp_circ, xf_bfbp_circ(:,1), xf_bfbp_circ(:,2),xf_bfbp_circ(:,3),xf_bfbp_circ(:,4), xf_bfbp_circ(:,5),xf_bfbp_circ(:,6)]; % Combine time with x, y, z coordinates
+fid = fopen(filename_end, 'w');
+fprintf(fid, 'Time (s)\tX (km)\tY (km)\tZ (km)\tvx (km)\tvy (km)\tvz (km)\n');
+fprintf(fid, '%.12f\t%.12f\t%.12f\t%.12f\t%.12f\t%.12f\t%.12f\n', data_new.');
+fclose(fid);
+disp(['Orbit coordinates saved to ' filename_end]);
+return
  [tfa_rtbp_L1, xf_rtbp_L1] = propTITF(ti,xi_L1,tf,@rtbp,hmin,hmax,tol,1);
  [tfa_etbp_L1, xf_etbp_L1] = propTITF(ti,xi_L1,tf,@etbp,hmin,hmax,tol,1);
  

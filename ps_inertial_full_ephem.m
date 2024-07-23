@@ -49,10 +49,8 @@ N = 50; %number of nodes
 
 %mu = 0.0122; %EM
 mu = 3.040423398444176E-06; %SE
-%orbit_file = 'Halo.txt';
-%orbit_file = 'orbit_coordinates.txt';
-%mu = 0.1 %Masde initial conditions
-orbit_file = 'lissa_cut.txt' %Masde orbits
+%orbit_file = 'lissa_cut.txt' %Masde orbits
+orbit_file = 'circular_orbit_Earth_Sun.txt'
 
 % Retrieve (read) rtbp orbit
 [t, x] = read_orbit(orbit_file);
@@ -276,7 +274,7 @@ SEb_vel_new = vp_new - mu*vs_vp_new;
 
 [rtbp_pos_spacecraft, rtbp_vel_spacecraft] = go_synodic_pos_vel_only(rs_rp_new,vs_vp_new, as_ap_new, SEb_pos_new, SEb_vel_new, phi_Q_list, n_rtbp);
 % Save data to Lissajous inertial text file
-filename_end = 'test_lissajous_for_comparison.txt';
+filename_end = 'test_circular_for_comparison.txt';
 size(rtbp_pos_spacecraft)
 size(rtbp_vel_spacecraft)
 size(t_inertial_list(:))
@@ -286,7 +284,7 @@ fprintf(fid, 'Time (s)\tX (km)\tY (km)\tZ (km)\tvx (km)\tvy (km)\tvz (km)\n');
 fprintf(fid, '%.12f\t%.12f\t%.12f\t%.12f\t%.12f\t%.12f\t%.12f\n', data_new.');
 fclose(fid);
 disp(['Orbit coordinates saved to ' filename_end]);
-return
+%return
 %figure
 % hold on
 %plot3(rtbp_pos_spacecraft(1,:), rtbp_pos_spacecraft(2,:), rtbp_pos_spacecraft(3,:))%
@@ -295,6 +293,7 @@ return
 % Create the 3D plot
 figure;
 hold on
+axis equal
 h = plot3(rtbp_pos_spacecraft(1,:), rtbp_pos_spacecraft(2,:), rtbp_pos_spacecraft(3,:), 'LineWidth', 1.2, 'DisplayName','F. Ephem Jup + Mar + Moon');
 h2 = plot3(x(:,1), x(:,2), x(:,3), 'LineWidth', 1, 'LineStyle','--', 'DisplayName', 'RTBP');
 scatter3(mu-1, 0, 0, 'filled', 'MarkerFaceColor', 'r');  % Plot the fixed point
@@ -310,7 +309,7 @@ az = linspace(0, 90, 90);  % Azimuth angles
 el = linspace(0, 50, 90);   % Constant elevation angle
 
 % Capture frames while rotating the view
-filename = '3d_orbit_spacecraft.gif';
+filename = '3d_circular_spacecraft.gif';
 for i = 1:length(az)
     view(az(i), el(i));
     drawnow;

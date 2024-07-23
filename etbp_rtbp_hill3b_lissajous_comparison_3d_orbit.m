@@ -85,6 +85,7 @@ GM_2 = get_GM_body(body_2);
 % %x1 = linspace((mu-1)-sqrt((mu)/3), (mu)+sqrt((mu)/3), 20); % Range for x(1)
 % x2 = linspace(-0.07,0.07, 4); % Range for x(2)
 filename = 'test_lissajous_for_comparison.txt';
+%filename = 'circular_orbit_Earth_Sun_Full_Ephem.txt'
 [t_orb,x_orb] = read_orbit(filename);
 %[X, Y] = meshgrid(x1, x2);
 %---------------------------------------------------------------------%
@@ -101,6 +102,8 @@ nu = 0.3218; %for sun earth at eclipse_date_et, computed with spkezr + rv2cel
 vector_field = zeros(3, length(x_orb(:,1)));
 % Define a state vector for each grid point (considering only 2D for simplicity)
 for i = 1:1:length(x_orb(:,1))
+    length(x_orb(:,1))
+    i
         t_HFEM = t_orb(i)/n_rtbp;
         t_peri_peri = (t_HFEM - eclipse_date_et)*n_anomalistic;
         t_rtbp = (t_HFEM - eclipse_date_et)*n_rtbp;
@@ -297,6 +300,19 @@ crossX3___ = x_orb(row___,3);
 % Overlay the crosses on the contour plot
 %scatter3(crossX1___, crossX2___,crossX3___,'s',45, 'DisplayName', 'SAME');
 legend('show')
+
+%compute best model
+alpha = 0.5;
+avg_rtbp = mean(Z(row))
+avg_etbp = mean(Z(row_))
+avg_hill3b = mean(Z(row__))
+
+score_rtbp = length(row)/length(Z)*(1-alpha) + min(min(avg_rtbp, avg_etbp), avg_hill3b)*alpha/avg_rtbp
+
+score_etbp = length(row_)/length(Z)*(1-alpha) + min(min(avg_rtbp, avg_etbp), avg_hill3b)*alpha/avg_etbp
+
+score_hill3b = length(row__)/length(Z)*(1-alpha) + min(min(avg_rtbp, avg_etbp), avg_hill3b)*alpha/avg_hill3b
+
 return
 
 %quiver3(mu-1, 0, 0, rtbp_pos_j(1)/(norm(rtbp_pos_j)*100), rtbp_pos_j(2)/(norm(rtbp_pos_j)*100), 0, 'r', 'LineWidth', 2, 'DisplayName','JUPITER BARYCENTER');
