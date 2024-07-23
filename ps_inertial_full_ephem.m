@@ -50,7 +50,8 @@ N = 50; %number of nodes
 %mu = 0.0122; %EM
 mu = 3.040423398444176E-06; %SE
 %orbit_file = 'lissa_cut.txt' %Masde orbits
-orbit_file = 'circular_orbit_Earth_Sun.txt'
+%orbit_file = 'circular_orbit_Earth_Sun.txt'
+orbit_file = 'halo_demo_master.txt';
 
 % Retrieve (read) rtbp orbit
 [t, x] = read_orbit(orbit_file);
